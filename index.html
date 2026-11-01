@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Сон и циклы — трекер сна</title>
+  <meta name="description" content="Дневник сна, накопленный недосып, хронотип и калькулятор отбоя по 90-минутным циклам.">
+  <meta name="theme-color" content="#0b1026">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@500;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg: #0b1026; --card: rgba(26, 33, 72, 0.72); --card2: rgba(40, 50, 100, 0.55); --line: rgba(165, 180, 252, 0.16); --text: #eef0ff; --muted: #9aa3d6; --lav: #a5b4fc; --moon: #fde68a; --bad: #fb7185; --ok: #6ee7b7; color-scheme: dark; }
+    html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; color: var(--text); font: 16px/1.5 Nunito, system-ui, sans-serif; background: radial-gradient(1200px 600px at 80% -10%, #2a2f6e, transparent 60%), var(--bg); background-attachment: fixed; }
+    body::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none; background-image: radial-gradient(1.5px 1.5px at 20% 30%, #fff8, transparent), radial-gradient(1px 1px at 70% 20%, #fff6, transparent), radial-gradient(1px 1px at 40% 70%, #fff5, transparent), radial-gradient(1.5px 1.5px at 85% 60%, #fff7, transparent), radial-gradient(1px 1px at 10% 85%, #fff5, transparent), radial-gradient(1px 1px at 55% 45%, #fff4, transparent); }
+    button, input, select { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    .app { max-width: 960px; margin: 0 auto; padding: calc(22px + env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom)); }
+    h1 { margin: 0 0 4px; font: 700 clamp(28px, 7vw, 38px) Comfortaa, sans-serif; }
+    .sub { margin: 0 0 20px; color: var(--muted); }
+    .grid { display: grid; gap: 14px; }
+    @media (min-width: 860px) { .grid { grid-template-columns: 1fr 1fr; } .wide { grid-column: 1 / -1; } }
+    .card { padding: 20px; border-radius: 24px; background: var(--card); border: 1px solid var(--line); backdrop-filter: blur(8px); min-width: 0; }
+    .card h2 { margin: 0 0 14px; font: 700 17px Comfortaa, sans-serif; }
+    .tabs { display: flex; gap: 6px; padding: 4px; border-radius: 14px; background: var(--card2); margin-bottom: 14px; }
+    .tabs button { flex: 1; padding: 9px; border: 0; border-radius: 10px; background: transparent; font-weight: 700; font-size: 14px; color: var(--muted); }
+    .tabs button.on { background: var(--lav); color: #141a40; }
+    .calc { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-weight: 700; }
+    input[type=time], input[type=date], select { padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card2); font-size: 16px; color-scheme: dark; }
+    .times { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; margin-top: 14px; }
+    .time { padding: 12px 6px; border-radius: 16px; background: var(--card2); text-align: center; border: 1px solid transparent; }
+    .time b { display: block; font: 700 24px Comfortaa, sans-serif; }
+    .time small { color: var(--muted); font-size: 12px; }
+    .time.best { border-color: var(--moon); }
+    .time.best b { color: var(--moon); }
+    .note { margin: 12px 0 0; color: var(--muted); font-size: 13px; }
+    .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .stat { padding: 14px; border-radius: 18px; background: var(--card2); }
+    .stat small { color: var(--muted); font-weight: 700; font-size: 13px; }
+    .stat b { display: block; font: 700 clamp(22px, 6vw, 28px) Comfortaa, sans-serif; margin-top: 2px; }
+    .stat span { font-size: 13px; color: var(--muted); }
+    .debt b { color: var(--bad); } .debt.zero b { color: var(--ok); }
+    .chrono { display: flex; align-items: center; gap: 14px; margin-top: 12px; padding: 14px; border-radius: 18px; background: var(--card2); }
+    .chrono span { font-size: 40px; }
+    .chrono b { display: block; font-size: 17px; }
+    .chrono small { color: var(--muted); }
+    form { display: grid; gap: 12px; }
+    .row3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    label { display: grid; gap: 4px; font-size: 13px; font-weight: 700; color: var(--muted); }
+    label input { width: 100%; min-width: 0; }
+    @media (max-width: 440px) { .row3 { grid-template-columns: 1fr 1fr; } .row3 label:first-child { grid-column: 1 / -1; } }
+    .q { display: flex; gap: 6px; }
+    .q label { flex: 1; display: block; }
+    .q input { display: none; }
+    .q span { display: block; padding: 8px 0; border-radius: 12px; background: var(--card2); text-align: center; font-size: 24px; border: 1px solid transparent; cursor: pointer; transition: transform 0.1s; }
+    .q input:checked + span { border-color: var(--moon); transform: scale(1.06); }
+    .btn { padding: 13px; border: 0; border-radius: 14px; background: var(--lav); color: #141a40; font-weight: 800; }
+    .btn--ghost { background: transparent; border: 1px solid var(--line); color: var(--muted); }
+    .chart { width: 100%; height: auto; display: block; }
+    .chart text { fill: var(--muted); font: 600 10px Nunito, sans-serif; }
+    .empty { padding: 20px 0; text-align: center; color: var(--muted); }
+    .log { display: grid; gap: 6px; margin-top: 12px; max-height: 300px; overflow: auto; }
+    .log div { display: grid; grid-template-columns: 1fr auto auto 30px; gap: 10px; align-items: center; padding: 8px 12px; border-radius: 12px; background: var(--card2); font-size: 14px; }
+    .log button { border: 0; background: transparent; color: var(--muted); font-size: 16px; }
+    .insight { margin-top: 10px; padding: 12px 14px; border-radius: 14px; background: var(--card2); font-size: 14px; }
+    .back { display: inline-block; margin-top: 18px; color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <h1>🌙 Сон и циклы</h1>
+  <p class="sub">Спите циклами по 90 минут и следите за недосыпом.</p>
+  <div class="grid">
+    <section class="card">
+      <h2>Калькулятор отбоя</h2>
+      <div class="tabs"><button class="on" data-mode="wake">Хочу встать в…</button><button data-mode="now">Ложусь сейчас</button></div>
+      <div class="calc" id="calcIn"><span>Подъём в</span><input type="time" id="wakeAt" value="07:00"></div>
+      <div class="times" id="times"></div>
+      <p class="note" id="calcNote"></p>
+    </section>
+    <section class="card">
+      <h2>Последние 7 ночей</h2>
+      <div class="stats">
+        <div class="stat"><small>Сон в среднем</small><b id="avg">—</b><span id="avgNote"></span></div>
+        <div class="stat debt" id="debtBox"><small>Недосып</small><b id="debt">—</b><span id="debtNote"></span></div>
+        <div class="stat"><small>Режим</small><b id="reg">—</b><span id="regNote"></span></div>
+        <div class="stat"><small>Цель</small><b><select id="goal" aria-label="Цель сна"></select></b><span>в сутки</span></div>
+      </div>
+      <div class="chrono" id="chrono"></div>
+    </section>
+    <section class="card wide">
+      <h2>Карта сна за две недели</h2>
+      <div id="chart"></div>
+      <div id="insight"></div>
+    </section>
+    <section class="card">
+      <h2>Записать ночь</h2>
+      <form id="form">
+        <div class="row3">
+          <label>Утро<input type="date" name="date" required></label>
+          <label>Лёг<input type="time" name="bed" value="23:30" required></label>
+          <label>Встал<input type="time" name="wake" value="07:30" required></label>
+        </div>
+        <label>Как спалось</label>
+        <div class="q"></div>
+        <button class="btn">Сохранить ночь</button>
+      </form>
+    </section>
+    <section class="card">
+      <h2>Дневник</h2>
+      <div class="log" id="log"></div>
+      <div id="demoWrap"></div>
+    </section>
+  </div>
+  <a class="back" href="/">← Портфолио</a>
+</div>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const KEY = 'sleep-v1';
+  const FALL = 15; // минут на засыпание
+  const Q = ['😫', '😕', '😐', '🙂', '😴'];
+  const QC = ['#fb7185', '#fdba74', '#fde68a', '#a5b4fc', '#6ee7b7'];
+  let data = { nights: [], goal: 480 };
+  try { data = { ...data, ...JSON.parse(localStorage.getItem(KEY)) }; } catch {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch {} };
+
+  const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+  const hhmm = (m) => { m = ((Math.round(m) % 1440) + 1440) % 1440; return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; };
+  const dur = (m) => `${Math.floor(m / 60)} ч ${String(Math.round(m % 60)).padStart(2, '0')} м`;
+  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const pd = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+  const length = (n) => ((toMin(n.wake) - toMin(n.bed)) + 1440) % 1440 || 1440;
+
+  // ---------- Калькулятор ----------
+  let mode = 'wake';
+  document.querySelectorAll('[data-mode]').forEach((b) => b.onclick = () => {
+    mode = b.dataset.mode;
+    document.querySelectorAll('[data-mode]').forEach((x) => x.classList.toggle('on', x === b));
+    $('calcIn').style.display = mode === 'wake' ? '' : 'none';
+    calc();
+  });
+  $('wakeAt').oninput = calc;
+  function calc() {
+    const cycles = [6, 5, 4, 3];
+    let html, note;
+    if (mode === 'wake') {
+      const w = toMin($('wakeAt').value || '07:00');
+      html = cycles.map((c) => `<div class="time ${c === 5 || c === 6 ? 'best' : ''}"><b>${hhmm(w - c * 90 - FALL)}</b><small>${c} циклов · ${dur(c * 90)}</small></div>`).join('');
+      note = `Чтобы проснуться в ${$('wakeAt').value} между циклами, ложитесь в одно из этих времён. Мы уже учли ~${FALL} минут на засыпание.`;
+    } else {
+      const now = new Date(), n = now.getHours() * 60 + now.getMinutes();
+      html = [...cycles].reverse().map((c) => `<div class="time ${c === 5 || c === 6 ? 'best' : ''}"><b>${hhmm(n + FALL + c * 90)}</b><small>${c} циклов · ${dur(c * 90)}</small></div>`).join('');
+      note = 'Поставьте будильник на одно из этих времён: проснуться в конце цикла легче, чем посреди глубокого сна.';
+    }
+    $('times').innerHTML = html; $('calcNote').textContent = note;
+  }
+
+  // ---------- Статистика ----------
+  function sorted() { return [...data.nights].sort((a, b) => (a.date < b.date ? 1 : -1)); }
+  function stats() {
+    const last7 = sorted().slice(0, 7);
+    if (!last7.length) {
+      ['avg', 'debt', 'reg'].forEach((id) => ($(id).textContent = '—'));
+      $('avgNote').textContent = $('debtNote').textContent = $('regNote').textContent = '';
+      $('chrono').innerHTML = '<span>🦉</span><div><b>Хронотип пока неизвестен</b><small>Запишите хотя бы 3 ночи.</small></div>';
+      return;
+    }
+    const lens = last7.map(length);
+    const avg = lens.reduce((a, b) => a + b, 0) / lens.length;
+    const debt = lens.reduce((a, l) => a + Math.max(0, data.goal - l), 0);
+    $('avg').textContent = dur(avg);
+    $('avgNote').textContent = avg >= data.goal ? 'в норме 👍' : `на ${dur(data.goal - avg)} меньше цели`;
+    $('debt').textContent = debt ? dur(debt) : 'нет';
+    $('debtBox').classList.toggle('zero', !debt);
+    $('debtNote').textContent = debt ? `≈ ${Math.ceil(debt / 60)} ч добрать за выходные` : 'вы высыпаетесь';
+    // регулярность — разброс времени отхода ко сну
+    const beds = last7.map((n) => { const m = toMin(n.bed); return m < 720 ? m + 1440 : m; });
+    const mean = beds.reduce((a, b) => a + b, 0) / beds.length;
+    const sd = Math.sqrt(beds.reduce((a, b) => a + (b - mean) ** 2, 0) / beds.length);
+    $('reg').textContent = sd < 30 ? 'Чёткий' : sd < 60 ? 'Плавает' : 'Хаос';
+    $('regNote').textContent = `отбой ±${Math.round(sd)} мин, обычно в ${hhmm(mean)}`;
+    // хронотип по середине сна
+    if (last7.length >= 3) {
+      const mids = last7.map((n) => { let b = toMin(n.bed); if (b < 720) b += 1440; return b + length(n) / 2; });
+      const mid = mids.reduce((a, b) => a + b, 0) / mids.length;
+      const ct = mid < 1440 + 180 ? ['🐦', 'Жаворонок', 'Пик продуктивности утром, рано устаёте вечером.'] : mid < 1440 + 270 ? ['🕊️', 'Голубь', 'Гибкий ритм, лучше всего работается с 10 до 14.'] : ['🦉', 'Сова', 'Раскачиваетесь к обеду, пик энергии вечером.'];
+      $('chrono').innerHTML = `<span>${ct[0]}</span><div><b>${ct[1]}</b><small>Середина сна около ${hhmm(mid)}. ${ct[2]}</small></div>`;
+    } else $('chrono').innerHTML = `<span>🦉</span><div><b>Хронотип пока неизвестен</b><small>Запишите ещё ${3 - last7.length} ноч${3 - last7.length === 1 ? 'ь' : 'и'}.</small></div>`;
+  }
+
+  // ---------- Карта сна (SVG) ----------
+  function chart() {
+    const nights = sorted().slice(0, 14).reverse();
+    if (!nights.length) { $('chart').innerHTML = '<div class="empty">Здесь появится карта сна: когда вы ложились и вставали.</div>'; $('insight').innerHTML = ''; return; }
+    const W = Math.round(Math.min(640, Math.max(320, $('chart').clientWidth || 640))), row = 22, top = 22, H = top + nights.length * row + 6, left = 48, right = 20;
+    const from = 20 * 60, span = 16 * 60; // с 20:00 до 12:00
+    const x = (m) => left + ((m - from + 1440) % 1440) / span * (W - left - right);
+    let svg = `<svg class="chart" viewBox="0 0 ${W} ${H}">`;
+    for (let h = 20; h <= 36; h += W < 480 ? 4 : 2) {
+      const xx = x((h % 24) * 60);
+      svg += `<line x1="${xx}" y1="${top - 6}" x2="${xx}" y2="${H}" stroke="rgba(165,180,252,.1)"/><text x="${xx}" y="12" text-anchor="middle">${String(h % 24).padStart(2, '0')}:00</text>`;
+    }
+    const goalWake = x(toMin('07:00'));
+    nights.forEach((n, i) => {
+      const y = top + i * row, b = x(toMin(n.bed)), w = x(toMin(n.wake));
+      const d = pd(n.date);
+      svg += `<text x="0" y="${y + 14}">${d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }).replace('.', '')}</text>`;
+      svg += `<rect x="${b}" y="${y + 3}" width="${Math.max(4, w - b)}" height="${row - 8}" rx="7" fill="${QC[n.q]}" opacity=".85"><title>${n.bed}–${n.wake} · ${dur(length(n))} ${Q[n.q]}</title></rect>`;
+      if (w - b > 64) svg += `<text x="${(b + w) / 2}" y="${y + 14.5}" text-anchor="middle" style="fill:#141a40;font-weight:800">${dur(length(n))}</text>`;
+    });
+    svg += '</svg>';
+    $('chart').innerHTML = svg;
+    // как длительность связана с самочувствием
+    const good = data.nights.filter((n) => n.q >= 3), bad = data.nights.filter((n) => n.q <= 1);
+    const mean = (a) => a.reduce((s, n) => s + length(n), 0) / a.length;
+    $('insight').innerHTML = good.length >= 2 && bad.length >= 1
+      ? `<div class="insight">💡 Когда вы высыпаетесь, сон длится в среднем <b>${dur(mean(good))}</b>, а в плохие ночи — <b>${dur(mean(bad))}</b>. Ваша комфортная норма, похоже, около ${dur(Math.round(mean(good) / 15) * 15)}.</div>`
+      : '<div class="insight">💡 Отмечайте самочувствие каждое утро: через пару недель здесь появится ваша личная норма сна.</div>';
+  }
+
+  function log() {
+    const list = sorted();
+    $('log').innerHTML = list.length ? list.map((n) => `<div><span>${pd(n.date).toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'short' })}</span><span>${n.bed}–${n.wake}</span><span>${Q[n.q]}</span><button data-del="${n.date}" aria-label="Удалить">✕</button></div>`).join('') : '<div class="empty" style="display:block">Записей пока нет</div>';
+    $('log').querySelectorAll('[data-del]').forEach((b) => b.onclick = () => { data.nights = data.nights.filter((n) => n.date !== b.dataset.del); save(); renderAll(); });
+    $('demoWrap').innerHTML = list.length ? '' : '<button class="btn btn--ghost" id="demo" style="width:100%;margin-top:10px">Показать на примере двух недель</button>';
+    if (!list.length) $('demo').onclick = demo;
+  }
+
+  function demo() {
+    const d = new Date();
+    data.nights = [];
+    for (let i = 13; i >= 0; i--) {
+      const day = new Date(d); day.setDate(d.getDate() - i);
+      const weekend = [0, 6].includes(day.getDay());
+      const bed = 23 * 60 + 10 + Math.round((Math.random() - 0.3) * 80) + (weekend ? 70 : 0);
+      const len = (weekend ? 540 : 410) + Math.round((Math.random() - 0.5) * 70);
+      const q = Math.max(0, Math.min(4, Math.round((len - 360) / 45 + (Math.random() - 0.5))));
+      data.nights.push({ date: iso(day), bed: hhmm(bed), wake: hhmm(bed + len), q });
+    }
+    save(); renderAll();
+  }
+
+  // ---------- Форма ----------
+  const form = $('form');
+  form.querySelector('.q').innerHTML = Q.map((e, i) => `<label><input type="radio" name="q" value="${i}" ${i === 3 ? 'checked' : ''}><span title="${['Ужасно', 'Плохо', 'Так себе', 'Хорошо', 'Отлично'][i]}">${e}</span></label>`).join('');
+  form.date.value = iso(new Date());
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    const n = { date: form.date.value, bed: form.bed.value, wake: form.wake.value, q: +form.q.value };
+    data.nights = data.nights.filter((x) => x.date !== n.date).concat(n);
+    save(); renderAll();
+    const d = pd(n.date); d.setDate(d.getDate() + 1); form.date.value = iso(d) > iso(new Date()) ? iso(new Date()) : iso(d);
+  };
+  $('goal').innerHTML = [420, 450, 480, 510, 540].map((m) => `<option value="${m}" ${m === data.goal ? 'selected' : ''}>${m / 60} ч</option>`).join('').replace(/\./g, ',');
+  $('goal').onchange = () => { data.goal = +$('goal').value; save(); stats(); };
+
+  function renderAll() { stats(); chart(); log(); }
+  let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(chart, 150); });
+  calc(); renderAll();
+})();
+</script>
+</body>
+</html>
